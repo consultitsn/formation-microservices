@@ -1,0 +1,42 @@
+server:
+  port: 0 # Port aléatoire pour les tests
+
+spring:
+  application:
+    name: microservices-introduction-test
+
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: password
+
+  h2:
+    console:
+      enabled: false
+
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+
+# Configuration Actuator pour les tests
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
+# Logging pour les tests
+logging:
+  level:
+    com.example.microservices: WARN
+    org.springframework.web: WARN
+    org.hibernate.SQL: WARN
