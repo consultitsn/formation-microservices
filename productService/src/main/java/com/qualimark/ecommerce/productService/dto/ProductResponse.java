@@ -1,220 +1,163 @@
-package com.qualimark.ecommerce.productService.model;
+package com.qualimark.ecommerce.productService.dto;
 
-import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
+
+import com.qualimark.ecommerce.productService.model.Product;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * Entité Product représentant un produit dans le système de vente alimentaire
+ * DTO pour les réponses des API de produits
  * 
- * Cette classe illustre le concept de "Database per Service" où chaque
- * microservice aurait sa propre base de données pour les produits.
+ * Ce DTO illustre le pattern Data Transfer Object pour la sérialisation
+ * des données dans les réponses API REST.
+ * 
+ * @author Formation Microservices
+ * @version 1.0
  */
-@Entity
-@Table(name = "products")
-public class Product {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class ProductResponse {
+    
     private Long id;
-
-    @NotBlank(message = "Le nom du produit est obligatoire")
-    @Size(max = 100, message = "Le nom ne peut pas dépasser 100 caractères")
-    @Column(nullable = false, length = 100, unique = true)
     private String name;
-
-    @Size(max = 500, message = "La description ne peut pas dépasser 500 caractères")
-    @Column(length = 500)
     private String description;
-
-    @NotNull(message = "Le prix est obligatoire")
-    @DecimalMin(value = "0.01", message = "Le prix doit être supérieur à 0")
-    @DecimalMax(value = "999999.99", message = "Le prix ne peut pas dépasser 999999.99")
-    @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
-
-    @Min(value = 0, message = "Le stock ne peut pas être négatif")
-    @Max(value = 10000, message = "Le stock ne peut pas dépasser 10000")
-    @Column(nullable = false)
     private Integer stock;
-
-    @NotBlank(message = "La catégorie est obligatoire")
-    @Size(max = 50, message = "La catégorie ne peut pas dépasser 50 caractères")
-    @Column(nullable = false, length = 50)
     private String category;
-
-    @Column(name = "sku", length = 50, unique = true)
     private String sku;
-
-    @Column(name = "weight")
     private BigDecimal weight;
-
-    @Column(name = "dimensions", length = 100)
     private String dimensions;
-
-    @Column(name = "is_active", nullable = false)
-    private Boolean isActive = true;
-
-    @Column(name = "created_at", nullable = false, updatable = false)
+    private Boolean isActive;
     private LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-
-    @Version
     private Long version;
-
+    
     // Constructeurs
-    public Product() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
-        this.isActive = true;
+    public ProductResponse() {}
+    
+    public ProductResponse(Product product) {
+        this.id = product.getId();
+        this.name = product.getName();
+        this.description = product.getDescription();
+        this.price = product.getPrice();
+        this.stock = product.getStock();
+        this.category = product.getCategory();
+        this.sku = product.getSku();
+        this.weight = product.getWeight();
+        this.dimensions = product.getDimensions();
+        this.isActive = product.getIsActive();
+        this.createdAt = product.getCreatedAt();
+        this.updatedAt = product.getUpdatedAt();
+        this.version = product.getVersion();
     }
-
-    public Product(String name, String description, BigDecimal price, Integer stock, String category) {
-        this();
-        this.name = name;
-        this.description = description;
-        this.price = price;
-        this.stock = stock;
-        this.category = category;
-    }
-
-    // Méthodes de cycle de vie JPA
-    @PreUpdate
-    public void preUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
-
-    // Méthodes métier
-    public boolean isAvailable() {
-        return isActive && stock > 0;
-    }
-
-    public boolean canReserve(int quantity) {
-        return isActive && stock >= quantity;
-    }
-
-    public void reserve(int quantity) {
-        if (!canReserve(quantity)) {
-            throw new IllegalStateException("Impossible de réserver " + quantity + " unités. Stock disponible : " + stock);
-        }
-        this.stock -= quantity;
-    }
-
-    public void release(int quantity) {
-        this.stock += quantity;
-    }
-
+    
     // Getters et Setters
     public Long getId() {
         return id;
     }
-
+    
     public void setId(Long id) {
         this.id = id;
     }
-
+    
     public String getName() {
         return name;
     }
-
+    
     public void setName(String name) {
         this.name = name;
     }
-
+    
     public String getDescription() {
         return description;
     }
-
+    
     public void setDescription(String description) {
         this.description = description;
     }
-
+    
     public BigDecimal getPrice() {
         return price;
     }
-
+    
     public void setPrice(BigDecimal price) {
         this.price = price;
     }
-
+    
     public Integer getStock() {
         return stock;
     }
-
+    
     public void setStock(Integer stock) {
         this.stock = stock;
     }
-
+    
     public String getCategory() {
         return category;
     }
-
+    
     public void setCategory(String category) {
         this.category = category;
     }
-
+    
     public String getSku() {
         return sku;
     }
-
+    
     public void setSku(String sku) {
         this.sku = sku;
     }
-
+    
     public BigDecimal getWeight() {
         return weight;
     }
-
+    
     public void setWeight(BigDecimal weight) {
         this.weight = weight;
     }
-
+    
     public String getDimensions() {
         return dimensions;
     }
-
+    
     public void setDimensions(String dimensions) {
         this.dimensions = dimensions;
     }
-
+    
     public Boolean getIsActive() {
         return isActive;
     }
-
+    
     public void setIsActive(Boolean isActive) {
         this.isActive = isActive;
     }
-
+    
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
-
+    
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
-
+    
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
     }
-
+    
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
-
+    
     public Long getVersion() {
         return version;
     }
-
+    
     public void setVersion(Long version) {
         this.version = version;
     }
-
+    
     @Override
     public String toString() {
-        return "Product{" +
+        return "ProductResponse{" +
                 "id=" + id +
                 ", name='" + name + '\'' +
                 ", description='" + description + '\'' +
@@ -222,6 +165,8 @@ public class Product {
                 ", stock=" + stock +
                 ", category='" + category + '\'' +
                 ", sku='" + sku + '\'' +
+                ", weight=" + weight +
+                ", dimensions='" + dimensions + '\'' +
                 ", isActive=" + isActive +
                 ", createdAt=" + createdAt +
                 ", updatedAt=" + updatedAt +

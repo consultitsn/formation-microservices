@@ -1,41 +1,47 @@
 server:
-  port: 8080
+  port: 8081
 
 spring:
   application:
-    name: ProductService
+    name: product-service
 
   datasource:
-    url: jdbc:h2:mem:testdb
-    driver-class-name: org.h2.Driver
-    username: sa
-    password: password
-
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
+    url: jdbc:postgresql://localhost:5432/productdb
+    username: productuser
+    password: productpass
+    driver-class-name: org.postgresql.Driver
 
   jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: create-drop
-    show-sql: true
+      ddl-auto: validate
+    show-sql: false
     properties:
       hibernate:
         format_sql: true
-  cloud:
-    config:
-      enabled: false
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
 # Configuration Actuator
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       show-details: always
+  prometheus:
+    metrics:
+      export:
+        enabled: true
 
 # Configuration OpenAPI/Swagger
 springdoc:
@@ -48,7 +54,15 @@ springdoc:
 # Logging
 logging:
   level:
-    com.example.microservices: DEBUG
-    org.springframework.web: DEBUG
+    com.example.productservice: DEBUG
+    org.springframework.web: INFO
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.flywaydb: INFO
+
+# Configuration personnalisée
+app:
+  product:
+    max-stock: 10000
+    min-price: 0.01
+    max-price: 999999.99

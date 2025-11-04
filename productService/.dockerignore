@@ -1,0 +1,59 @@
+# Fichiers de test - non nécessaires dans l'image (mais on garde src/ pour le build)
+**/*Test.java
+**/*Tests.java
+
+# Fichiers de build Maven - exclus car on compile dans Docker
+target/
+
+# Fichiers Maven - on garde pom.xml pour le build
+.mvn/
+mvnw
+mvnw.cmd
+
+# Fichiers Git
+.git/
+.gitignore
+.gitattributes
+
+# Fichiers IDE
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+.settings/
+.project
+.classpath
+
+# Fichiers de documentation
+README.md
+*.md
+docs/
+
+# Fichiers Docker et configuration locale
+docker-compose.yml
+Dockerfile
+
+# Fichiers de logs
+*.log
+logs/
+
+# Fichiers temporaires
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+*.bak
+*.backup
+
+# Fichiers de configuration locale
+.env
+.env.local
+
+# Fichiers de rapport
+reports/

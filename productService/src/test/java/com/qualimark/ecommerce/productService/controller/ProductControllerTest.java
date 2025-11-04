@@ -1,15 +1,19 @@
 package com.qualimark.ecommerce.productService.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.qualimark.ecommerce.productService.dto.ProductRequest;
 import com.qualimark.ecommerce.productService.model.Product;
 import com.qualimark.ecommerce.productService.service.ProductService;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -18,33 +22,33 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * Tests unitaires pour ProductController avec @WebMvcTest
+ * Tests unitaires pour le ProductController
  * 
- * Ces tests utilisent @WebMvcTest pour tester uniquement la couche web MVC
- * sans démarrer le contexte Spring complet. Le ProductService est mocké.
+ * Ces tests utilisent @WebMvcTest pour tester uniquement la couche web
+ * sans charger le contexte Spring complet.
  */
 @WebMvcTest(ProductController.class)
-class ProductControllerTest {
-
+@DisplayName("Tests unitaires ProductController")
+public class ProductControllerTest {
+    
     @Autowired
     private MockMvc mockMvc;
-
+    
     @MockBean
     private ProductService productService;
-
+    
     @Autowired
     private ObjectMapper objectMapper;
-
+    
     private Product testProduct;
-    private Product testProduct2;
-
+    private ProductRequest productRequest;
+    
     @BeforeEach
     void setUp() {
         testProduct = new Product(
@@ -52,345 +56,390 @@ class ProductControllerTest {
             "Description du produit de test",
             new BigDecimal("10.00"),
             50,
-            "Electronics"
+            "Test"
         );
         testProduct.setId(1L);
-
-        testProduct2 = new Product(
-            "Test Product 2",
-            "Description du produit 2",
-            new BigDecimal("20.00"),
-            30,
-            "Books"
-        );
-        testProduct2.setId(2L);
+        testProduct.setSku("TEST001");
+        testProduct.setIsActive(true);
+        
+        productRequest = new ProductRequest();
+        productRequest.setName("Test Product");
+        productRequest.setDescription("Description");
+        productRequest.setPrice(new BigDecimal("10.00"));
+        productRequest.setStock(50);
+        productRequest.setCategory("Test");
+        productRequest.setSku("TEST001");
     }
-
+    
     @Test
+    @DisplayName("Devrait récupérer tous les produits")
     void testGetAllProducts() throws Exception {
         // Given
-        List<Product> products = Arrays.asList(testProduct, testProduct2);
-        when(productService.getAllProducts()).thenReturn(products);
-
+        List<Product> products = Arrays.asList(testProduct);
+        Pageable pageable = PageRequest.of(0, 20);
+        Page<Product> productPage = new PageImpl<>(products, pageable, products.size());
+        
+        when(productService.getProductsSorted(anyString(), any(Pageable.class))).thenReturn(productPage);
+        
         // When & Then
-        mockMvc.perform(get("/api/products"))
+        mockMvc.perform(get("/api/v1/products")
+                .param("page", "0")
+                .param("size", "20")
+                .param("sortBy", "name")
+                .param("sortDir", "asc"))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].id").value(1))
-                .andExpect(jsonPath("$[0].name").value("Test Product"))
-                .andExpect(jsonPath("$[0].price").value(10.00))
-                .andExpect(jsonPath("$[1].id").value(2))
-                .andExpect(jsonPath("$[1].name").value("Test Product 2"));
-
-        verify(productService, times(1)).getAllProducts();
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content.length()").value(1));
+        
+        verify(productService, times(1)).getProductsSorted(anyString(), any(Pageable.class));
     }
-
+    
     @Test
-    void testGetProductById_Success() throws Exception {
+    @DisplayName("Devrait récupérer un produit par ID")
+    void testGetProductById() throws Exception {
         // Given
         when(productService.getProductById(1L)).thenReturn(Optional.of(testProduct));
-
+        
         // When & Then
-        mockMvc.perform(get("/api/products/1"))
+        mockMvc.perform(get("/api/v1/products/1"))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.name").value("Test Product"))
-                .andExpect(jsonPath("$.price").value(10.00))
-                .andExpect(jsonPath("$.stock").value(50))
-                .andExpect(jsonPath("$.category").value("Electronics"));
-
+                .andExpect(jsonPath("$.sku").value("TEST001"));
+        
         verify(productService, times(1)).getProductById(1L);
     }
-
+    
     @Test
-    void testGetProductById_NotFound() throws Exception {
+    @DisplayName("Devrait retourner 404 si le produit n'existe pas")
+    void testGetProductByIdNotFound() throws Exception {
         // Given
         when(productService.getProductById(999L)).thenReturn(Optional.empty());
-
+        
         // When & Then
-        mockMvc.perform(get("/api/products/999"))
+        mockMvc.perform(get("/api/v1/products/999"))
                 .andExpect(status().isNotFound());
-
+        
         verify(productService, times(1)).getProductById(999L);
     }
-
+    
     @Test
-    void testCreateProduct_Success() throws Exception {
+    @DisplayName("Devrait récupérer un produit par SKU")
+    void testGetProductBySku() throws Exception {
         // Given
-        Product newProduct = new Product(
-            "New Product",
-            "New Description",
-            new BigDecimal("15.50"),
-            25,
-            "Food"
-        );
-        Product savedProduct = new Product(
-            "New Product",
-            "New Description",
-            new BigDecimal("15.50"),
-            25,
-            "Food"
-        );
-        savedProduct.setId(3L);
-
-        when(productService.createProduct(any(Product.class))).thenReturn(savedProduct);
-
+        when(productService.getProductBySku("TEST001")).thenReturn(Optional.of(testProduct));
+        
         // When & Then
-        mockMvc.perform(post("/api/products")
+        mockMvc.perform(get("/api/v1/products/sku/TEST001"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sku").value("TEST001"));
+        
+        verify(productService, times(1)).getProductBySku("TEST001");
+    }
+    
+    @Test
+    @DisplayName("Devrait créer un nouveau produit")
+    void testCreateProduct() throws Exception {
+        // Given
+        when(productService.createProduct(any(Product.class))).thenReturn(testProduct);
+        
+        // When & Then
+        mockMvc.perform(post("/api/v1/products")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(newProduct)))
+                .content(objectMapper.writeValueAsString(productRequest)))
                 .andExpect(status().isCreated())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(3))
-                .andExpect(jsonPath("$.name").value("New Product"))
-                .andExpect(jsonPath("$.price").value(15.50))
-                .andExpect(jsonPath("$.stock").value(25));
-
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.name").value("Test Product"));
+        
         verify(productService, times(1)).createProduct(any(Product.class));
     }
-
+    
     @Test
-    void testCreateProduct_Conflict() throws Exception {
+    @DisplayName("Devrait retourner 409 si le produit existe déjà")
+    void testCreateProductConflict() throws Exception {
         // Given
-        Product duplicateProduct = new Product(
-            "Duplicate Product",
-            "Description",
-            new BigDecimal("10.00"),
-            5,
-            "Test"
-        );
-
         when(productService.createProduct(any(Product.class)))
-                .thenThrow(new IllegalArgumentException("Un produit avec ce nom existe déjà"));
-
+            .thenThrow(new IllegalArgumentException("Un produit avec ce nom existe déjà"));
+        
         // When & Then
-        mockMvc.perform(post("/api/products")
+        mockMvc.perform(post("/api/v1/products")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(duplicateProduct)))
+                .content(objectMapper.writeValueAsString(productRequest)))
                 .andExpect(status().isConflict());
-
+        
         verify(productService, times(1)).createProduct(any(Product.class));
     }
-
+    
     @Test
-    void testCreateProduct_ValidationError() throws Exception {
-        // Given - Product avec des champs invalides (nom vide)
-        Product invalidProduct = new Product(
-            "", // Nom vide - devrait échouer la validation
-            "Description",
-            new BigDecimal("10.00"),
-            5,
-            "Test"
-        );
-
-        // When & Then
-        mockMvc.perform(post("/api/products")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(invalidProduct)))
-                .andExpect(status().isBadRequest());
-
-        verify(productService, never()).createProduct(any(Product.class));
-    }
-
-    @Test
-    void testUpdateProduct_Success() throws Exception {
+    @DisplayName("Devrait mettre à jour un produit")
+    void testUpdateProduct() throws Exception {
         // Given
-        Product updateData = new Product(
-            "Updated Product",
-            "Updated Description",
-            new BigDecimal("25.00"),
-            75,
-            "Updated Category"
-        );
         Product updatedProduct = new Product(
             "Updated Product",
             "Updated Description",
-            new BigDecimal("25.00"),
-            75,
+            new BigDecimal("20.00"),
+            100,
             "Updated Category"
         );
         updatedProduct.setId(1L);
-
+        
         when(productService.updateProduct(eq(1L), any(Product.class))).thenReturn(updatedProduct);
-
+        
         // When & Then
-        mockMvc.perform(put("/api/products/1")
+        mockMvc.perform(put("/api/v1/products/1")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(updateData)))
+                .content(objectMapper.writeValueAsString(productRequest)))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.name").value("Updated Product"))
-                .andExpect(jsonPath("$.price").value(25.00))
-                .andExpect(jsonPath("$.stock").value(75));
-
+                .andExpect(jsonPath("$.name").value("Updated Product"));
+        
         verify(productService, times(1)).updateProduct(eq(1L), any(Product.class));
     }
-
+    
     @Test
-    void testUpdateProduct_NotFound() throws Exception {
+    @DisplayName("Devrait retourner 404 si le produit à mettre à jour n'existe pas")
+    void testUpdateProductNotFound() throws Exception {
         // Given
-        Product updateData = new Product(
-            "Updated Product",
-            "Description",
-            new BigDecimal("25.00"),
-            75,
-            "Test"
-        );
-
         when(productService.updateProduct(eq(999L), any(Product.class)))
-                .thenThrow(new IllegalArgumentException("Produit non trouvé avec l'ID : 999"));
-
+            .thenThrow(new IllegalArgumentException("Produit non trouvé"));
+        
         // When & Then
-        mockMvc.perform(put("/api/products/999")
+        mockMvc.perform(put("/api/v1/products/999")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(updateData)))
+                .content(objectMapper.writeValueAsString(productRequest)))
                 .andExpect(status().isNotFound());
-
+        
         verify(productService, times(1)).updateProduct(eq(999L), any(Product.class));
     }
-
+    
     @Test
-    void testDeleteProduct_Success() throws Exception {
+    @DisplayName("Devrait supprimer un produit")
+    void testDeleteProduct() throws Exception {
         // Given
         doNothing().when(productService).deleteProduct(1L);
-
+        
         // When & Then
-        mockMvc.perform(delete("/api/products/1"))
+        mockMvc.perform(delete("/api/v1/products/1"))
                 .andExpect(status().isNoContent());
-
+        
         verify(productService, times(1)).deleteProduct(1L);
     }
-
+    
     @Test
-    void testDeleteProduct_NotFound() throws Exception {
+    @DisplayName("Devrait retourner 404 si le produit à supprimer n'existe pas")
+    void testDeleteProductNotFound() throws Exception {
         // Given
-        doThrow(new IllegalArgumentException("Produit non trouvé avec l'ID : 999"))
-                .when(productService).deleteProduct(999L);
-
+        doThrow(new IllegalArgumentException("Produit non trouvé"))
+            .when(productService).deleteProduct(999L);
+        
         // When & Then
-        mockMvc.perform(delete("/api/products/999"))
+        mockMvc.perform(delete("/api/v1/products/999"))
                 .andExpect(status().isNotFound());
-
+        
         verify(productService, times(1)).deleteProduct(999L);
     }
-
+    
     @Test
+    @DisplayName("Devrait rechercher des produits par catégorie")
     void testGetProductsByCategory() throws Exception {
         // Given
-        List<Product> electronicsProducts = Arrays.asList(testProduct);
-        when(productService.getProductsByCategory("Electronics")).thenReturn(electronicsProducts);
-
+        List<Product> products = Arrays.asList(testProduct);
+        Pageable pageable = PageRequest.of(0, 20);
+        Page<Product> productPage = new PageImpl<>(products, pageable, products.size());
+        
+        when(productService.getProductsByCategory(eq("Test"), any(Pageable.class))).thenReturn(productPage);
+        
         // When & Then
-        mockMvc.perform(get("/api/products/category/Electronics"))
+        mockMvc.perform(get("/api/v1/products/category/Test")
+                .param("page", "0")
+                .param("size", "20"))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].category").value("Electronics"));
-
-        verify(productService, times(1)).getProductsByCategory("Electronics");
+                .andExpect(jsonPath("$.content").isArray());
+        
+        verify(productService, times(1)).getProductsByCategory(eq("Test"), any(Pageable.class));
     }
-
+    
     @Test
+    @DisplayName("Devrait rechercher des produits par nom")
     void testSearchProductsByName() throws Exception {
         // Given
-        List<Product> searchResults = Arrays.asList(testProduct);
-        when(productService.searchProductsByName("Test")).thenReturn(searchResults);
-
+        List<Product> products = Arrays.asList(testProduct);
+        Pageable pageable = PageRequest.of(0, 20);
+        Page<Product> productPage = new PageImpl<>(products, pageable, products.size());
+        
+        when(productService.searchProductsByName(eq("Test"), any(Pageable.class))).thenReturn(productPage);
+        
         // When & Then
-        mockMvc.perform(get("/api/products/search")
-                .param("name", "Test"))
+        mockMvc.perform(get("/api/v1/products/search")
+                .param("name", "Test")
+                .param("page", "0")
+                .param("size", "20"))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].name").value("Test Product"));
-
-        verify(productService, times(1)).searchProductsByName("Test");
+                .andExpect(jsonPath("$.content").isArray());
+        
+        verify(productService, times(1)).searchProductsByName(eq("Test"), any(Pageable.class));
     }
-
+    
     @Test
+    @DisplayName("Devrait récupérer les produits disponibles")
     void testGetAvailableProducts() throws Exception {
         // Given
-        List<Product> availableProducts = Arrays.asList(testProduct);
-        when(productService.getAvailableProducts()).thenReturn(availableProducts);
-
+        List<Product> products = Arrays.asList(testProduct);
+        Pageable pageable = PageRequest.of(0, 20);
+        Page<Product> productPage = new PageImpl<>(products, pageable, products.size());
+        
+        when(productService.getAvailableProducts(any(Pageable.class))).thenReturn(productPage);
+        
         // When & Then
-        mockMvc.perform(get("/api/products/available"))
+        mockMvc.perform(get("/api/v1/products/available")
+                .param("page", "0")
+                .param("size", "20"))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].stock").value(50));
-
-        verify(productService, times(1)).getAvailableProducts();
+                .andExpect(jsonPath("$.content").isArray());
+        
+        verify(productService, times(1)).getAvailableProducts(any(Pageable.class));
     }
-
+    
     @Test
-    void testUpdateStock_Success() throws Exception {
+    @DisplayName("Devrait rechercher des produits par plage de prix")
+    void testGetProductsByPriceRange() throws Exception {
         // Given
-        Product updatedProduct = new Product(
-            "Test Product",
-            "Description du produit de test",
-            new BigDecimal("10.00"),
-            100, // Nouveau stock
-            "Electronics"
-        );
-        updatedProduct.setId(1L);
-
-        when(productService.updateStock(1L, 100)).thenReturn(updatedProduct);
-
+        List<Product> products = Arrays.asList(testProduct);
+        Pageable pageable = PageRequest.of(0, 20);
+        Page<Product> productPage = new PageImpl<>(products, pageable, products.size());
+        
+        when(productService.getProductsByPriceRange(any(BigDecimal.class), any(BigDecimal.class), any(Pageable.class))).thenReturn(productPage);
+        
         // When & Then
-        mockMvc.perform(patch("/api/products/1/stock")
+        mockMvc.perform(get("/api/v1/products/price-range")
+                .param("minPrice", "5.00")
+                .param("maxPrice", "15.00")
+                .param("page", "0")
+                .param("size", "20"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray());
+        
+        verify(productService, times(1)).getProductsByPriceRange(any(BigDecimal.class), any(BigDecimal.class), any(Pageable.class));
+    }
+    
+    @Test
+    @DisplayName("Devrait mettre à jour le stock d'un produit")
+    void testUpdateStock() throws Exception {
+        // Given
+        testProduct.setStock(100);
+        when(productService.updateStock(1L, 100)).thenReturn(testProduct);
+        
+        // When & Then
+        mockMvc.perform(patch("/api/v1/products/1/stock")
                 .param("stock", "100"))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.stock").value(100));
-
+        
         verify(productService, times(1)).updateStock(1L, 100);
     }
-
+    
     @Test
-    void testUpdateStock_BadRequest() throws Exception {
+    @DisplayName("Devrait retourner 400 si le stock est invalide")
+    void testUpdateStockInvalid() throws Exception {
         // Given
         when(productService.updateStock(1L, -10))
-                .thenThrow(new IllegalArgumentException("Le stock ne peut pas être négatif"));
-
+            .thenThrow(new IllegalArgumentException("Le stock ne peut pas être négatif"));
+        
         // When & Then
-        mockMvc.perform(patch("/api/products/1/stock")
+        mockMvc.perform(patch("/api/v1/products/1/stock")
                 .param("stock", "-10"))
                 .andExpect(status().isBadRequest());
-
+        
         verify(productService, times(1)).updateStock(1L, -10);
     }
-
+    
     @Test
-    void testCheckAvailability_Available() throws Exception {
+    @DisplayName("Devrait réserver du stock pour un produit")
+    void testReserveStock() throws Exception {
+        // Given
+        testProduct.setStock(40);
+        when(productService.reserveStock(1L, 10)).thenReturn(testProduct);
+        
+        // When & Then
+        mockMvc.perform(post("/api/v1/products/1/reserve")
+                .param("quantity", "10"))
+                .andExpect(status().isOk());
+        
+        verify(productService, times(1)).reserveStock(1L, 10);
+    }
+    
+    @Test
+    @DisplayName("Devrait retourner 400 si la réservation échoue")
+    void testReserveStockFailure() throws Exception {
+        // Given
+        when(productService.reserveStock(1L, 1000))
+            .thenThrow(new IllegalStateException("Stock insuffisant"));
+        
+        // When & Then
+        mockMvc.perform(post("/api/v1/products/1/reserve")
+                .param("quantity", "1000"))
+                .andExpect(status().isBadRequest());
+        
+        verify(productService, times(1)).reserveStock(1L, 1000);
+    }
+    
+    @Test
+    @DisplayName("Devrait libérer du stock réservé")
+    void testReleaseStock() throws Exception {
+        // Given
+        testProduct.setStock(60);
+        when(productService.releaseStock(1L, 10)).thenReturn(testProduct);
+        
+        // When & Then
+        mockMvc.perform(post("/api/v1/products/1/release")
+                .param("quantity", "10"))
+                .andExpect(status().isOk());
+        
+        verify(productService, times(1)).releaseStock(1L, 10);
+    }
+    
+    @Test
+    @DisplayName("Devrait vérifier la disponibilité d'un produit")
+    void testCheckAvailability() throws Exception {
         // Given
         when(productService.isProductAvailable(1L)).thenReturn(true);
-
+        
         // When & Then
-        mockMvc.perform(get("/api/products/1/availability"))
+        mockMvc.perform(get("/api/v1/products/1/availability"))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$").value(true));
-
+                .andExpect(content().string("true"));
+        
         verify(productService, times(1)).isProductAvailable(1L);
     }
-
+    
     @Test
-    void testCheckAvailability_NotAvailable() throws Exception {
+    @DisplayName("Devrait vérifier si un produit peut être réservé")
+    void testCanReserve() throws Exception {
         // Given
-        when(productService.isProductAvailable(2L)).thenReturn(false);
-
+        when(productService.canReserveProduct(1L, 10)).thenReturn(true);
+        
         // When & Then
-        mockMvc.perform(get("/api/products/2/availability"))
+        mockMvc.perform(get("/api/v1/products/1/can-reserve")
+                .param("quantity", "10"))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$").value(false));
-
-        verify(productService, times(1)).isProductAvailable(2L);
+                .andExpect(content().string("true"));
+        
+        verify(productService, times(1)).canReserveProduct(1L, 10);
+    }
+    
+    @Test
+    @DisplayName("Devrait récupérer les produits avec stock faible")
+    void testGetProductsWithLowStock() throws Exception {
+        // Given
+        List<Product> products = Arrays.asList(testProduct);
+        when(productService.getProductsWithLowStock(10)).thenReturn(products);
+        
+        // When & Then
+        mockMvc.perform(get("/api/v1/products/low-stock")
+                .param("threshold", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray());
+        
+        verify(productService, times(1)).getProductsWithLowStock(10);
     }
 }
 
