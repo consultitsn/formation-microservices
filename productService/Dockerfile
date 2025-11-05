@@ -26,7 +26,7 @@ COPY src ./src
 # Compiler l'application et créer le JAR
 RUN mvn clean package -DskipTests && \
     mkdir -p /app && \
-    cp target/product-service-*.jar /app/app.jar
+    cp target/productService-*.jar /app/app.jar
 
 # ============================================
 # Stage 2: Runtime - Image finale légère
