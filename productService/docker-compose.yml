@@ -1,5 +1,24 @@
 services:
 
+  product-db:
+    image: postgres:15-alpine
+    container_name: product-db
+    environment:
+      POSTGRES_DB: productdb
+      POSTGRES_USER: productuser
+      POSTGRES_PASSWORD: productpass
+    ports:
+      - "5437:5432"
+    volumes:
+      - product_db_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    networks:
+      - product-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U productuser -d productdb" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # Application Product Service
   product-service:
@@ -14,7 +33,8 @@ services:
       SPRING_PROFILES_ACTIVE: docker
     ports:
       - "8082:8081"
-
+    depends_on:
+      - product-db
     networks:
       - product-network
     healthcheck:
@@ -24,6 +44,9 @@ services:
       retries: 3
       start_period: 60s
 
+volumes:
+  product_db_data:
+    driver: local
 
 networks:
   product-network:

@@ -2,6 +2,7 @@ package com.qualimark.ecommerce.productService.controller;
 
 import com.qualimark.ecommerce.productService.dto.ProductRequest;
 import com.qualimark.ecommerce.productService.dto.ProductResponse;
+import com.qualimark.ecommerce.productService.exception.ResourceNotFoundException;
 import com.qualimark.ecommerce.productService.model.Product;
 import com.qualimark.ecommerce.productService.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -71,7 +72,7 @@ public class ProductController {
             @Parameter(description = "ID du produit à récupérer") @PathVariable Long id) {
         Optional<Product> product = productService.getProductById(id);
         return product.map(p -> ResponseEntity.ok(new ProductResponse(p)))
-                .orElse(ResponseEntity.notFound().build());
+                .orElseThrow(() -> new ResourceNotFoundException("Produit non trouvé avec l'ID : " + id));
     }
 
     /**

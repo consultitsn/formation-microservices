@@ -1,5 +1,7 @@
 package com.qualimark.ecommerce.productService.service;
 
+import com.qualimark.ecommerce.productService.exception.ResourceAlreadyExistException;
+import com.qualimark.ecommerce.productService.exception.ResourceNotFoundException;
 import com.qualimark.ecommerce.productService.model.Product;
 import com.qualimark.ecommerce.productService.repository.ProductRepository;
 import org.springframework.data.domain.Page;
@@ -64,7 +66,7 @@ public class ProductService {
     public Product createProduct(Product product) {
         // Vérification que le produit n'existe pas déjà
         if (productRepository.findByNameAndIsActiveTrue(product.getName()).isPresent()) {
-            throw new IllegalArgumentException("Un produit avec ce nom existe déjà");
+            throw new ResourceAlreadyExistException("Un produit avec ce nom existe déjà");
         }
 
         // Génération automatique du SKU si non fourni
@@ -73,7 +75,7 @@ public class ProductService {
         } else {
             // Vérification que le SKU n'existe pas déjà
             if (productRepository.findBySkuAndIsActiveTrue(product.getSku()).isPresent()) {
-                throw new IllegalArgumentException("Un produit avec ce SKU existe déjà");
+                throw new ResourceAlreadyExistException("Un produit avec ce SKU existe déjà");
             }
         }
 
@@ -90,19 +92,19 @@ public class ProductService {
     public Product updateProduct(Long id, Product productDetails) {
         Product product = productRepository.findById(id)
                 .filter(Product::getIsActive)
-                .orElseThrow(() -> new IllegalArgumentException("Produit non trouvé avec l'ID : " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Produit non trouvé avec l'ID : " + id));
 
         // Vérification que le nouveau nom n'existe pas déjà (si changé)
         if (!product.getName().equals(productDetails.getName())) {
             if (productRepository.findByNameAndIsActiveTrue(productDetails.getName()).isPresent()) {
-                throw new IllegalArgumentException("Un produit avec ce nom existe déjà");
+                throw new ResourceAlreadyExistException("Un produit avec ce nom existe déjà");
             }
         }
 
         // Vérification que le nouveau SKU n'existe pas déjà (si changé)
         if (productDetails.getSku() != null && !product.getSku().equals(productDetails.getSku())) {
             if (productRepository.findBySkuAndIsActiveTrue(productDetails.getSku()).isPresent()) {
-                throw new IllegalArgumentException("Un produit avec ce SKU existe déjà");
+                throw new ResourceAlreadyExistException("Un produit avec ce SKU existe déjà");
             }
         }
 
@@ -126,7 +128,7 @@ public class ProductService {
     public void deleteProduct(Long id) {
         Product product = productRepository.findById(id)
                 .filter(Product::getIsActive)
-                .orElseThrow(() -> new IllegalArgumentException("Produit non trouvé avec l'ID : " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Produit non trouvé avec l'ID : " + id));
 
         product.setIsActive(false);
         productRepository.save(product);
@@ -190,7 +192,7 @@ public class ProductService {
     public Product updateStock(Long id, Integer newStock) {
         Product product = productRepository.findById(id)
                 .filter(Product::getIsActive)
-                .orElseThrow(() -> new IllegalArgumentException("Produit non trouvé avec l'ID : " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Produit non trouvé avec l'ID : " + id));
 
         if (newStock < 0) {
             throw new IllegalArgumentException("Le stock ne peut pas être négatif");
@@ -210,7 +212,7 @@ public class ProductService {
     public Product reserveStock(Long id, Integer quantity) {
         Product product = productRepository.findById(id)
                 .filter(Product::getIsActive)
-                .orElseThrow(() -> new IllegalArgumentException("Produit non trouvé avec l'ID : " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Produit non trouvé avec l'ID : " + id));
 
         product.reserve(quantity);
         return productRepository.save(product);
@@ -226,7 +228,7 @@ public class ProductService {
     public Product releaseStock(Long id, Integer quantity) {
         Product product = productRepository.findById(id)
                 .filter(Product::getIsActive)
-                .orElseThrow(() -> new IllegalArgumentException("Produit non trouvé avec l'ID : " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Produit non trouvé avec l'ID : " + id));
 
         product.release(quantity);
         return productRepository.save(product);
