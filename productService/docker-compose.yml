@@ -1,24 +1,5 @@
 services:
-  # Base de données PostgreSQL pour le Product Service
-  product-db:
-    image: postgres:15-alpine
-    container_name: product-db
-    environment:
-      POSTGRES_DB: productdb
-      POSTGRES_USER: productuser
-      POSTGRES_PASSWORD: productpass
-    ports:
-      - "5433:5432"
-    volumes:
-      - product_db_data:/var/lib/postgresql/data
-      - ./init-scripts:/docker-entrypoint-initdb.d
-    networks:
-      - product-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U productuser -d productdb"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+
 
   # Application Product Service
   product-service:
@@ -32,10 +13,8 @@ services:
       SPRING_DATASOURCE_PASSWORD: productpass
       SPRING_PROFILES_ACTIVE: docker
     ports:
-      - "8081:8081"
-    depends_on:
-      product-db:
-        condition: service_healthy
+      - "8082:8081"
+
     networks:
       - product-network
     healthcheck:
@@ -45,27 +24,6 @@ services:
       retries: 3
       start_period: 60s
 
-  # pgAdmin pour l'administration de la base de données
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: product-pgadmin
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@productservice.com
-      PGADMIN_DEFAULT_PASSWORD: admin123
-    ports:
-      - "5050:80"
-    depends_on:
-      - product-db
-    networks:
-      - product-network
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin
-
-volumes:
-  product_db_data:
-    driver: local
-  pgadmin_data:
-    driver: local
 
 networks:
   product-network:

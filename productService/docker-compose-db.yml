@@ -13,7 +13,7 @@ services:
       - product_db_data:/var/lib/postgresql/data
       - ./init-scripts:/docker-entrypoint-initdb.d
     networks:
-      - db-network
+      - product-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U productuser -d productdb"]
       interval: 10s
@@ -33,7 +33,7 @@ services:
     depends_on:
       - product-db
     networks:
-      - db-network
+      - product-network
     volumes:
       - pgadmin_data:/var/lib/pgadmin
 
@@ -44,5 +44,5 @@ volumes:
     driver: local
 
 networks:
-  db-network:
+  product-network:
     driver: bridge
