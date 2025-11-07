@@ -105,22 +105,18 @@ public class ProductController {
     })
     public ResponseEntity<ProductResponse> createProduct(
             @Parameter(description = "Données du produit à créer") @Valid @RequestBody ProductRequest productRequest) {
-        try {
-            Product product = new Product();
-            product.setName(productRequest.getName());
-            product.setDescription(productRequest.getDescription());
-            product.setPrice(productRequest.getPrice());
-            product.setStock(productRequest.getStock());
-            product.setCategory(productRequest.getCategory());
-            product.setSku(productRequest.getSku());
-            product.setWeight(productRequest.getWeight());
-            product.setDimensions(productRequest.getDimensions());
+        Product product = new Product();
+        product.setName(productRequest.getName());
+        product.setDescription(productRequest.getDescription());
+        product.setPrice(productRequest.getPrice());
+        product.setStock(productRequest.getStock());
+        product.setCategory(productRequest.getCategory());
+        product.setSku(productRequest.getSku());
+        product.setWeight(productRequest.getWeight());
+        product.setDimensions(productRequest.getDimensions());
 
-            Product createdProduct = productService.createProduct(product);
-            return ResponseEntity.status(HttpStatus.CREATED).body(new ProductResponse(createdProduct));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
-        }
+        Product createdProduct = productService.createProduct(product);
+        return ResponseEntity.status(HttpStatus.CREATED).body(new ProductResponse(createdProduct));
     }
 
     /**

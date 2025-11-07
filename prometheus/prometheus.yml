@@ -1,0 +1,70 @@
+# Configuration Prometheus pour les microservices
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'microservices'
+    environment: 'development'
+
+# Configuration des alertes (optionnel)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets: []
+
+# Règles d'alerte (optionnel)
+# rule_files:
+#   - "alert_rules.yml"
+
+# Configuration des cibles à scraper
+scrape_configs:
+  # Prometheus lui-même
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # API Gateway
+  - job_name: 'api-gateway'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['api-gateway:8080']
+        labels:
+          service: 'api-gateway'
+          instance: 'api-gateway-1'
+
+  # Product Service
+  - job_name: 'product-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['product-service:8081']
+        labels:
+          service: 'product-service'
+          instance: 'product-service-1'
+
+  # Order Service
+  - job_name: 'order-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['order-service:8082']
+        labels:
+          service: 'order-service'
+          instance: 'order-service-1'
+
+  # Service Discovery (Eureka)
+  - job_name: 'service-discovery'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['service-discovery:8761']
+        labels:
+          service: 'service-discovery'
+          instance: 'eureka-1'
+
+  # Keycloak (si métriques exposées)
+  - job_name: 'keycloak'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['keycloak:8090']
+        labels:
+          service: 'keycloak'
+          instance: 'keycloak-1'
+

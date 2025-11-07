@@ -1,0 +1,52 @@
+server:
+  port: 8761
+
+spring:
+  application:
+    name: service-discovery
+
+# Configuration Eureka Server
+eureka:
+  instance:
+    hostname: localhost
+  client:
+    # Désactiver l'enregistrement auprès d'autres instances Eureka (mode standalone)
+    register-with-eureka: false
+    fetch-registry: false
+    service-url:
+      defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
+  server:
+    # Désactiver le mode de protection (pour le développement)
+    enable-self-preservation: false
+    # Intervalle de renouvellement (en secondes)
+    renewal-percent-threshold: 0.85
+    # Intervalle d'expiration (en secondes)
+    eviction-interval-timer-in-ms: 5000
+
+# Configuration Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,env
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
+# Logging
+logging:
+  level:
+    com.example.discovery: INFO
+    com.netflix.eureka: INFO
+    com.netflix.discovery: INFO
+    org.springframework.cloud: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
