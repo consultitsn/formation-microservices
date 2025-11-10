@@ -4,6 +4,8 @@ import com.qualimark.ecommerce.productService.exception.ResourceAlreadyExistExce
 import com.qualimark.ecommerce.productService.exception.ResourceNotFoundException;
 import com.qualimark.ecommerce.productService.model.Product;
 import com.qualimark.ecommerce.productService.repository.ProductRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -17,6 +19,7 @@ import java.util.Optional;
 @Transactional
 public class ProductService {
 
+    private static final Logger log = LoggerFactory.getLogger(ProductService.class);
     private final ProductRepository productRepository;
 
     public ProductService(ProductRepository productRepository) {
@@ -42,6 +45,7 @@ public class ProductService {
      */
     @Transactional(readOnly = true)
     public Optional<Product> getProductById(Long id) {
+        log.info("getProductById called");
         return productRepository.findById(id)
                 .filter(Product::getIsActive);
     }
@@ -242,6 +246,7 @@ public class ProductService {
      */
     @Transactional(readOnly = true)
     public boolean isProductAvailable(Long id) {
+        log.info("isProductAvailable called");
         return productRepository.findById(id)
                 .filter(Product::getIsActive)
                 .map(Product::isAvailable)

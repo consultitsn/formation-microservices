@@ -1,0 +1,28 @@
+
+
+spring:
+  application:
+    name: discovery
+
+
+# Configuration Eureka Server
+eureka:
+  instance:
+    hostname: localhost
+  client:
+    # Désactiver l'enregistrement auprès d'autres instances Eureka (mode standalone)
+    register-with-eureka: false
+    fetch-registry: false
+    service-url:
+      defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
+  server:
+    # Désactiver le mode de protection (pour le développement)
+    enable-self-preservation: false
+    # Intervalle de renouvellement (en secondes)
+    renewal-percent-threshold: 0.85
+    # Intervalle d'expiration (en secondes)
+    eviction-interval-timer-in-ms: 5000
+
+
+server:
+  port: 8761

@@ -60,6 +60,33 @@ services:
       start_period: 10s
     restart: unless-stopped
 
+  # ============================================
+  # Base de données PostgreSQL pour Order Service
+  # ============================================
+  commande-db:
+    image: postgres:15-alpine
+    container_name: commande-db
+    hostname: commande-db
+    environment:
+      POSTGRES_DB: commandedb
+      POSTGRES_USER: orderuser
+      POSTGRES_PASSWORD: orderpass
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    ports:
+      - "5435:5432"
+    volumes:
+      - commande_db_data:/var/lib/postgresql/data
+    networks:
+      - microservices-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U orderuser -d orderdb" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+
 
 # ============================================
 # Volumes
@@ -68,6 +95,8 @@ volumes:
   product_db_data:
     driver: local
   order_db_data:
+    driver: local
+  commande_db_data:
     driver: local
 
 # ============================================

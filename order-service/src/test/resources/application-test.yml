@@ -1,0 +1,34 @@
+spring:
+  application:
+    name: order-service-test
+  
+  datasource:
+    url: jdbc:postgresql://localhost:5432/orderdb_test
+    username: orderuser
+    password: orderpass
+    driver-class-name: org.postgresql.Driver
+  
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+  
+  flyway:
+    enabled: false
+
+# Désactiver Eureka pour les tests
+eureka:
+  client:
+    enabled: false
+
+# Désactiver la sécurité pour les tests
+security:
+  enabled: false
+
+# Logging
+logging:
+  level:
+    com.example.orderservice: DEBUG

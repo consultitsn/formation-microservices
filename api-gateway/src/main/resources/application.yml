@@ -32,8 +32,8 @@ spring:
                   basedOnPreviousValue: false
 
         # Route vers Order Service (via Eureka)
-        - id: order-service
-          uri: lb://order-service
+        - id: commandeService
+          uri: lb://commandeService
           predicates:
             - Path=/api/v1/orders/**
           filters:
@@ -41,7 +41,7 @@ spring:
             - name: CircuitBreaker
               args:
                 name: orderService
-                fallbackUri: forward:/fallback/order-service
+                fallbackUri: forward:/fallback/commandeService
             - name: Retry
               args:
                 retries: 3
@@ -61,8 +61,8 @@ spring:
           filters:
             - StripPrefix=2
 
-        - id: order-service-actuator
-          uri: lb://order-service
+        - id: commandeService-actuator
+          uri: lb://commandeService
           predicates:
             - Path=/api/v1/orders/actuator/**
           filters:
@@ -178,7 +178,7 @@ app:
     services:
       product-service:
         timeout: 5000
-      order-service:
+      commandeService:
         timeout: 10000
     rate-limit:
       enabled: true
